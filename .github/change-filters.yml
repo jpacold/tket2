@@ -13,6 +13,7 @@ rust:
   - "compile-rewriter/**"
   - "hugr-passes/**"
   - "tket1-passes/**"
+  - "tket-qec/**"
 
 python:
   - *rust-core
