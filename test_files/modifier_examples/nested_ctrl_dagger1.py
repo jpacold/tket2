@@ -4,14 +4,14 @@
 #     "guppylang ==0.21.14",
 # ]
 # ///
-"""A simple controlled gate using modifiers"""
+"""Nested control and dagger modifiers in various combinations"""
 
 from pathlib import Path
 from sys import argv
 import sys
 
 from guppylang import guppy
-from guppylang.std.builtins import control
+from guppylang.std.builtins import control, dagger
 from guppylang.std.debug import state_result
 from guppylang.std.quantum import discard, qubit, angle
 from guppylang.std.quantum import h, rx, x
@@ -24,27 +24,38 @@ enable_experimental_features()
 
 
 @guppy(unitary=True)
-def bar(q: qubit) -> None:
-    rx(q, angle(1 / 3))
+def rotation(q: qubit) -> None:
+    rx(q, angle(-1 / 3))
+
+
+@guppy(unitary=True)
+def flip(q: qubit) -> None:
+    x(q)
 
 
 @guppy
 def main() -> None:
     c1 = qubit()
-    t = qubit()
     c2 = qubit()
-    c3 = qubit()
-    h(c1)
-    x(c2)
-    x(c3)
-    with control(c1, c2, c3):
-        bar(t)
+    t1 = qubit()
+    t2 = qubit()
 
-    state_result("r", c1, c2, c3, t)
+    h(c1)
+    h(c2)
+
+    with control(c1):
+        with dagger:
+            rotation(t2)
+
+    with dagger:
+        with control(c2):
+            rotation(t1)
+
+    state_result("r", c1, c2, t1, t2)
     discard(c1)
-    discard(t)
-    discard(c3)
     discard(c2)
+    discard(t1)
+    discard(t2)
 
 
 program = main.compile()

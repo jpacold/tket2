@@ -4,7 +4,7 @@
 #     "guppylang ==0.21.14",
 # ]
 # ///
-"""A simple controlled gate using modifiers"""
+"""An example with an even number of daggers, which should cancel out"""
 
 from pathlib import Path
 from sys import argv
@@ -13,8 +13,8 @@ import sys
 from guppylang import guppy
 from guppylang.std.builtins import dagger
 from guppylang.std.debug import state_result
-from guppylang.std.quantum import discard, qubit
-from guppylang.std.quantum import s, h
+from guppylang.std.quantum import discard, qubit, angle
+from guppylang.std.quantum import rx
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -24,17 +24,20 @@ enable_experimental_features()
 
 
 @guppy(unitary=True)
-def bar(q: qubit) -> None:
-    s(q)
+def rotation(q: qubit) -> None:
+    rx(q, angle(1 / 4))
 
 
 @guppy
 def main() -> None:
     t = qubit()
-    h(t)
 
     with dagger:
-        bar(t)
+        with dagger:
+            rotation(t)
+
+    with dagger, dagger, dagger:
+        rotation(t)
 
     state_result("r", t)
     discard(t)
