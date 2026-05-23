@@ -1239,7 +1239,7 @@ pub fn resolve_modifier_with_entrypoints_and_scope(
     // and attempt to rewrite each modifier node it encounters.
     let mut resolver = ModifierResolver::new();
     let mut worklist = entry_points.clone();
-    let mut visited = vec![];
+    let mut visited = HashSet::new();
 
     while let Some(node) = worklist.pop_front() {
         // Skip nodes that have been removed during previous rewrites or already visited.
@@ -1249,7 +1249,7 @@ pub fn resolve_modifier_with_entrypoints_and_scope(
         // Expand the frontier: enqueue children and dataflow neighbours not yet visited.
         worklist.extend(h.children(node).filter(|n| !visited.contains(n)));
         worklist.extend(h.all_neighbours(node).filter(|n| !visited.contains(n)));
-        visited.push(node);
+        visited.insert(node);
         if let Err(e) = resolver.try_rewrite(h, node) {
             // ModifierError means this node is not a modifier (or is not the first
             // in its chain) and can safely be skipped.
@@ -1269,11 +1269,11 @@ pub fn resolve_modifier_with_entrypoints_and_scope(
     // generate nodes that are not reachable from the entry points.
     // If more thorough cleanup is needed, we should run dead code elimination.
     let mut deletelist = entry_points.clone();
-    let mut visited = vec![];
+    let mut visited = HashSet::new();
     while let Some(node) = deletelist.pop_front() {
         deletelist.extend(h.children(node).filter(|n| !visited.contains(n)));
         deletelist.extend(h.all_neighbours(node).filter(|n| !visited.contains(n)));
-        visited.push(node);
+        visited.insert(node);
         if h.contains_node(node) {
             let optype = h.get_optype(node);
             if Modifier::from_optype(optype).is_some() {
@@ -1983,9 +1983,6 @@ mod tests {
     #[case::subscript_in_ctrl("../test_files/modifier_examples/subscript_in_ctrl.hugr")]
     #[case::subscript_in_dagger("../test_files/modifier_examples/subscript_in_dagger.hugr")]
     #[case::subscript_as_controller("../test_files/modifier_examples/subscript_as_controller.hugr")]
-    // TODO(perf): Investigate why this test is so slow (18s on my machine).
-    // <https://github.com/Quantinuum/tket2/issues/1586>
-    #[ignore = "slow regression test"]
     #[case::complex_modifier_stress("../test_files/modifier_examples/complex_modifier_stress.hugr")]
     #[case::ctrl_array_controller("../test_files/modifier_examples/ctrl_array_controller.hugr")]
     #[case::call1_in_ctrl("../test_files/modifier_examples/call1_in_ctrl.hugr")]
