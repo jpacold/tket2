@@ -103,6 +103,7 @@
 //! - User defined extension ops: There is no way to infer modified unknown extension ops.
 //!   We currently try to insert the original optype without any modification,
 //!   but this could result in an unexpected error.
+use fxhash::FxHashSet;
 use itertools::{Either, Itertools};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
@@ -1239,7 +1240,7 @@ pub fn resolve_modifier_with_entrypoints_and_scope(
     // and attempt to rewrite each modifier node it encounters.
     let mut resolver = ModifierResolver::new();
     let mut worklist = entry_points.clone();
-    let mut visited = HashSet::new();
+    let mut visited = FxHashSet::default();
 
     while let Some(node) = worklist.pop_front() {
         // Skip nodes that have been removed during previous rewrites or already visited.
@@ -1269,7 +1270,7 @@ pub fn resolve_modifier_with_entrypoints_and_scope(
     // generate nodes that are not reachable from the entry points.
     // If more thorough cleanup is needed, we should run dead code elimination.
     let mut deletelist = entry_points.clone();
-    let mut visited = HashSet::new();
+    let mut visited = FxHashSet::default();
     while let Some(node) = deletelist.pop_front() {
         deletelist.extend(h.children(node).filter(|n| !visited.contains(n)));
         deletelist.extend(h.all_neighbours(node).filter(|n| !visited.contains(n)));
